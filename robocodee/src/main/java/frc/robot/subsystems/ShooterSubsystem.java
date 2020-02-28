@@ -22,8 +22,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonSRX shooterSlave2;
     private final TalonSRX shooterSlave3;
 
+    // No Longer Needed
     private final PIDController shooterPID;
 
+    // No Longer Needed
     private int desiredRPM;
 
     public ShooterSubsystem() {
@@ -58,10 +60,34 @@ public class ShooterSubsystem extends SubsystemBase {
         shooterSlave2.follow(shooterMaster);
         shooterSlave3.follow(shooterMaster);
 
+        /**
+		 * Phase sensor accordingly. 
+         * Positive Sensor Reading should match Green (blinking) Leds on Talon
+         */
+		shooterMaster.setSensorPhase(true);
+
+		/* Config the peak and nominal outputs */
+		shooterMaster.configNominalOutputForward(0);
+		shooterMaster.configNominalOutputReverse(0);
+		shooterMaster.configPeakOutputForward(1);
+		shooterMaster.configPeakOutputReverse(-1);
+
+        /* Config the Velocity closed loop gains in slot0 */
+        // You'll ended changing these after testing
+        // Imo you'll never used F I D, P is usually good enough
+		shooterMaster.config_kF(0, 0);
+		shooterMaster.config_kP(0, 0);
+		shooterMaster.config_kI(0, 0);
+		shooterMaster.config_kD(0, 0);
+
+
+        // No longer needed
+        // \/ Aligns with what I said on line 75
         // no I or D for velocity loops
         shooterPID = new PIDController(ShooterConstants.kP, 0, 0);
     }
 
+    // Imo no longer needed
     private double getShooterActualRPM() {
         // divide by 4096 to get rotations/100ms
         // multiply by 10 to get rotations/second
@@ -75,20 +101,24 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private double calculateOutput(int desiredRPM) {
-        double pidOutput = shooterPID.calculate(getShooterActualRPM());
-        double feedforward = ShooterConstants.shooterFeedforward.calculate(desiredRPM);
-
-        return pidOutput + feedforward;
+        // Rev / min
+        // 4096 count / 1 rev
+        // 1 min / 60 s
+        // 0.1 s / 100 ms
+        // 4096 / 600
+        return (desiredRPM * 4096) / 600;
     }
 
     public void setRPM(int desiredRPM) {
+        // Wrote this for velocity
         this.desiredRPM = desiredRPM;
-        double shooterPower = calculateOutput(desiredRPM);
-        shooterMaster.set(ControlMode.PercentOutput, shooterPower);
+        double shooterPower = calculateOutput( desiredRPM );
+        shooterMaster.set(ControlMode.Velocity, shooterPower);
     }
 
     public void autoShoot() {
-        boolean shooterRPMCloseEnough = Math.abs(getShooterActualRPM() - desiredRPM) < 100;
+        // shooterMaster.getClosedLoopError() does exactly what you did but is directly from the talon, so you're sure its exact (also looks better)
+        boolean shooterRPMCloseEnough = Math.abs( shooterMaster.getClosedLoopError() ) < 100;
         if (shooterRPMCloseEnough) {
             indexer.set(1);
         } else {

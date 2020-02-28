@@ -43,9 +43,16 @@ public class RobotContainer {
         // slow spin by default
         spindexerSubsystem.setDefaultCommand(new RunCommand(
                 spindexerSubsystem::slowSpin, spindexerSubsystem));
+
+        // You can set default commands in here for subsystems to reference the controller easier.
+        // This is will be active whenever another drivetrain command isnt, but I don't think you have any so you're all good
+        drivetrainSubsystem.setDefaultCommand( new RunCommand( () -> drivetrainSubsystem.setDrivePowers(  () -> GetDriverRawAxis(1), () -> GetDriverRawAxis(5) ) ) );
     }
 
     private void configureButtonBindings() {
+       
+
+
         driverController.leftBumper
                 .whileHeld(() -> {
                     intakeSubsystem.startIntaking();

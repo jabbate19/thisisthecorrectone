@@ -12,6 +12,8 @@ import frc.robot.Constants;
 
 import static frc.robot.Constants.DrivetrainConstants.*;
 
+import java.util.function.DoubleSupplier;
+
 public class DrivetrainSubsystem extends SubsystemBase {
 
     private final PWMSparkMax left1;
@@ -44,5 +46,14 @@ public class DrivetrainSubsystem extends SubsystemBase {
         right2.set(speed);
      
     }
-   
+
+    /**
+     * This combines both of your setMotor commands and uses DoubleSuppliers to be constantly updating for TeleOp.
+     * @param left Lambda for left power
+     * @param right Lambda for right power
+     */
+        public void setDrivePowers( DoubleSupplier left, DoubleSupplier right ){
+            setLeftMotors( left.getAsDouble() );
+            setRightMotors( right.getAsDouble() );
+        }
 }
